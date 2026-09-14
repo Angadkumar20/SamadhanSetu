@@ -51,7 +51,25 @@ const authorizeRoles = (...roles) => {
   };
 };
 
+// Middleware to prevent sensitive actions if email is not verified
+const requireVerifiedEmail = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Not authorized, please log in' });
+  }
+
+  if (!req.user.isEmailVerified) {
+    return res.status(403).json({
+      message: 'Email verification required. Please verify your email address to perform this action.',
+      code: 'EMAIL_NOT_VERIFIED',
+    });
+  }
+
+  next();
+};
+
 module.exports = {
   protect,
   authorizeRoles,
+  requireVerifiedEmail,
 };
+

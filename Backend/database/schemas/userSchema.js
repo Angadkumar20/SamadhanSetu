@@ -27,10 +27,10 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: {
-        values: ['citizen', 'university', 'industry'],
-        message: '{VALUE} is not a valid role. Choose citizen, university, or industry.',
+        values: ['citizen', 'university', 'industry', 'admin'],
+        message: '{VALUE} is not a valid role. Choose citizen, university, industry, or admin.',
       },
-      required: [true, 'Role is required (citizen, university, or industry)'],
+      required: [true, 'Role is required (citizen, university, industry, or admin)'],
     },
     phone: {
       type: String,
@@ -41,6 +41,50 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: '',
+    },
+    // User interface language preference (persisted in MongoDB)
+    language: {
+      type: String,
+      trim: true,
+      default: 'en',
+    },
+    hasSelectedLanguage: {
+      type: Boolean,
+      default: false,
+    },
+    // Account verification for closed verified network (University & Industry)
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationStatus: {
+      type: String,
+      enum: ['Pending Verification', 'Verified', 'Rejected'],
+      default: 'Pending Verification',
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
+      default: null,
+    },
+    emailVerificationExpires: {
+      type: Date,
+      default: null,
+    },
+    resetPasswordToken: {
+      type: String,
+      default: null,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
     },
   },
   {

@@ -23,13 +23,16 @@ app.use(express.json());
 // Database Connection
 // ==========================================
 const { connectDB } = require('./database');
-connectDB();
+const { seedAdminAccount } = require('./utils/adminSeeder');
 
-// ==========================================
-// API Routes
-// ==========================================
+connectDB().then(() => {
+  seedAdminAccount();
+});
+
 const authRoutes = require('./routes/authRoutes');
 const problemRoutes = require('./routes/problemRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Root endpoint: quick health/info check
 app.get('/', (req, res) => {
@@ -40,13 +43,17 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       problems: '/api/problems',
+      notifications: '/api/notifications',
+      admin: '/api/admin',
     },
   });
 });
 
-// Mount authentication and problem management routes
+// Mount authentication, problem, notification, and admin routes
 app.use('/api/auth', authRoutes);
 app.use('/api/problems', problemRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ==========================================
 // 404 Not Found & Error Handling Middleware
