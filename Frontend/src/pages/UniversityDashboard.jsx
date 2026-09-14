@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StatusBadge from '../components/StatusBadge';
 import ProblemTimeline from '../components/ProblemTimeline';
@@ -13,6 +14,7 @@ import api from '../api/axios';
  * 3. Allows accepting assignments, starting work, posting progress updates, and submitting solutions for review.
  */
 function UniversityDashboard() {
+  const navigate = useNavigate();
   const [problems, setProblems] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,10 +45,16 @@ function UniversityDashboard() {
     setIsLoading(true);
     setFeedback({ type: '', message: '' });
     try {
-      const [profileRes, assignedRes] = await Promise.all([
-        api.get('/auth/me'),
-        api.get('/problems/assigned'),
-      ]);
+      const profileRes = await api.get('/auth/me');
+      if (profileRes.data.user?.role !== 'university') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('isEmailVerified');
+        navigate('/login/university');
+        return;
+      }
+      const assignedRes = await api.get('/problems/assigned');
       setUserProfile(profileRes.data.user);
       setProblems(assignedRes.data.problems || []);
     } catch (error) {
@@ -63,7 +71,7 @@ function UniversityDashboard() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [navigate]);
 
   // Auto-dismiss temporary success messages after 4 seconds
   useEffect(() => {

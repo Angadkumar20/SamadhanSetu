@@ -10,7 +10,7 @@ import api from '../api/axios';
  * - Strict client-side validation (Name >= 2, strict email regex, password >= 6)
  * - Password visibility toggle
  * - Clean loading state with disabled inputs/buttons
- * - Informative post-registration verification instructions
+ * - Immediate post-registration sign-in flow
  */
 function RegisterPage() {
   const { role } = useParams();
@@ -29,7 +29,6 @@ function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isRegistered, setIsRegistered] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState('');
 
   // Human-readable role names
   const roleDisplayNames = {
@@ -97,7 +96,6 @@ function RegisterPage() {
         localStorage.setItem('pendingLanguageRole', role);
       }
 
-      setRegisteredEmail(normalizedEmail);
       setIsRegistered(true);
     } catch (error) {
       if (error.response && error.response.data && error.response.data.message) {
@@ -144,15 +142,14 @@ function RegisterPage() {
                 </svg>
               </div>
 
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Check Your Email</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Account Created Successfully</h3>
               
               <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-                We have sent a verification link to <strong className="text-slate-800">{registeredEmail}</strong>.
-                Please click the link to verify your email and activate full access to SamadhanSetu.
+                Your SamadhanSetu account is ready. Sign in to open your portal and continue.
               </p>
 
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 mb-6 text-left">
-                <strong>Important:</strong> You can sign in right away, but sensitive actions (such as problem reporting and status updates) require a verified email.
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 mb-6 text-left">
+                Use the email address and password you registered with to sign in.
               </div>
 
               <div className="space-y-3">
@@ -160,7 +157,7 @@ function RegisterPage() {
                   to={`/login/${role}`}
                   className="w-full inline-flex justify-center items-center py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-sm shadow-sm transition-colors"
                 >
-                  Proceed to Sign In
+                  Continue to Sign In
                 </Link>
 
                 <Link
@@ -258,7 +255,7 @@ function RegisterPage() {
                     placeholder="you@example.com"
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-all"
                   />
-                  <p className="mt-1 text-xs text-slate-400">A verification link will be sent to this email.</p>
+                  <p className="mt-1 text-xs text-slate-400">This email is used for sign-in and account contact.</p>
                 </div>
 
                 {/* Phone Field (Optional) */}

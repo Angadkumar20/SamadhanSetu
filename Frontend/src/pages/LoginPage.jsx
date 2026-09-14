@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import i18n from '../i18n';
@@ -18,6 +18,16 @@ import BrandMark from '../components/BrandMark';
 function LoginPage() {
   const { role } = useParams();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedRole = localStorage.getItem('role');
+    if (storedRole && storedRole !== role) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('isEmailVerified');
+    }
+  }, [role]);
 
   // Form state
   const [email, setEmail] = useState('');
@@ -69,7 +79,7 @@ function LoginPage() {
 
       if (token) {
         localStorage.setItem('token', token);
-        localStorage.setItem('role', role);
+        localStorage.setItem('role', user?.role || role);
 
         if (user) {
           if (user.name) localStorage.setItem('userName', user.name);
@@ -91,10 +101,11 @@ function LoginPage() {
           industry: '/industry/dashboard',
           admin: '/admin/dashboard',
         };
-        const targetDashboard = dashboardRoutes[role] || `/${role}/dashboard`;
+        const authenticatedRole = user?.role || role;
+        const targetDashboard = dashboardRoutes[authenticatedRole] || `/${authenticatedRole}/dashboard`;
 
         if (isNewUser) {
-          navigate(`/select-language/${role}`);
+          navigate(`/select-language/${authenticatedRole}`);
         } else {
           localStorage.setItem('userHasSelectedLanguage', 'true');
           navigate(targetDashboard);

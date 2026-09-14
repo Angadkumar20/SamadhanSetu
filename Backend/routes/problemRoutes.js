@@ -44,7 +44,6 @@ router.get('/assigned', protect, authorizeRoles('university', 'industry'), getAs
 router.post(
   '/',
   protect,
-  requireVerifiedEmail,
   authorizeRoles('citizen'),
   upload.array('media', 5),
   createProblem

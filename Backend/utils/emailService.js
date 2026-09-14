@@ -23,7 +23,7 @@ const createTransporter = () => {
   }
 
   return nodemailer.createTransport({
-    host: host || 'smtp.gmail.com',
+    host,
     port,
     secure: port === 465,
     auth: { user, pass },

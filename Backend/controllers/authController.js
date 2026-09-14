@@ -2,8 +2,6 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const {
-  sendVerificationEmail,
-  sendWelcomeEmail,
   sendPasswordResetEmail,
 } = require('../utils/emailService');
 
@@ -72,15 +70,7 @@ const register = async (req, res) => {
       });
     }
 
-    // 7. Generate secure random email verification token
-    const rawVerificationToken = crypto.randomBytes(32).toString('hex');
-    const hashedVerificationToken = crypto
-      .createHash('sha256')
-      .update(rawVerificationToken)
-      .digest('hex');
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-    // 8. Create user in database (password is automatically hashed by User schema pre-save hook)
+    // 7. Create user in database (password is automatically hashed by User schema pre-save hook)
     const user = await User.create({
       name: trimmedName,
       email: normalizedEmail,
@@ -91,21 +81,15 @@ const register = async (req, res) => {
       expertise: expertise ? String(expertise).trim() : '',
       language: language ? String(language).trim().toLowerCase() : 'en',
       hasSelectedLanguage: Boolean(language),
-      isEmailVerified: false,
-      emailVerificationToken: hashedVerificationToken,
-      emailVerificationExpires: verificationExpires,
+      isEmailVerified: true,
     });
 
-    // 9. Send verification email via Nodemailer
-    await sendVerificationEmail(user.email, user.name, rawVerificationToken);
-
-    // 10. Generate JWT token
+    // 8. Generate JWT token
     const token = generateToken(user._id, user.role);
 
-    // 11. Return response with user data and verification notice
+    // 9. Return response with immediate login credentials
     return res.status(201).json({
-      message:
-        'Registration successful! A verification link has been sent to your email. Please verify your email to unlock all platform capabilities.',
+      message: 'Registration successful! You can sign in and use your SamadhanSetu account now.',
       token,
       user: {
         _id: user._id,
@@ -131,7 +115,7 @@ const register = async (req, res) => {
 };
 
 /**
- * @desc    Verify email address using secure token
+ * @desc    Verify email address using a legacy verification token
  * @route   GET /api/auth/verify-email/:token
  * @access  Public
  */
@@ -168,9 +152,6 @@ const verifyEmail = async (req, res) => {
     user.emailVerificationExpires = null;
     await user.save();
 
-    // Send professional Welcome Email upon successful verification
-    await sendWelcomeEmail(user.email, user.name);
-
     return res.status(200).json({
       message: 'Email verified successfully! Welcome to SamadhanSetu.',
       verified: true,
@@ -192,54 +173,14 @@ const verifyEmail = async (req, res) => {
 };
 
 /**
- * @desc    Resend email verification link
+ * @desc    Legacy email verification resend endpoint
  * @route   POST /api/auth/resend-verification
  * @access  Public
  */
 const resendVerification = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ message: 'Please provide an email address' });
-    }
-
-    const normalizedEmail = String(email).trim().toLowerCase();
-    const user = await User.findOne({ email: normalizedEmail });
-
-    if (!user) {
-      return res.status(404).json({ message: 'No account found with this email address' });
-    }
-
-    if (user.isEmailVerified) {
-      return res.status(400).json({
-        message: 'This email is already verified. You can log in directly.',
-      });
-    }
-
-    // Generate fresh verification token
-    const rawVerificationToken = crypto.randomBytes(32).toString('hex');
-    const hashedVerificationToken = crypto
-      .createHash('sha256')
-      .update(rawVerificationToken)
-      .digest('hex');
-
-    user.emailVerificationToken = hashedVerificationToken;
-    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await user.save();
-
-    await sendVerificationEmail(user.email, user.name, rawVerificationToken);
-
-    return res.status(200).json({
-      message: 'A new verification email has been sent. Please check your inbox.',
-    });
-  } catch (error) {
-    console.error('Resend verification error:', error.message);
-    return res.status(500).json({
-      message: 'Server error resending verification email.',
-      error: error.message,
-    });
-  }
+  return res.status(410).json({
+    message: 'Email verification is no longer required. You can sign in directly.',
+  });
 };
 
 /**
