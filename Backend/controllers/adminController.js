@@ -619,7 +619,7 @@ const verifySolution = async (req, res) => {
           problem: problem._id,
           title: 'Solution Approved by Government',
           message: `Your submitted solution for "${problem.title}" has been verified and marked Solved. Outstanding work!`,
-          type: 'problem_solved',
+          type: 'solution_approved',
         });
       }
 
@@ -649,7 +649,7 @@ const verifySolution = async (req, res) => {
           problem: problem._id,
           title: 'Solution Revision Requested',
           message: `Government Administrator requested changes on "${problem.title}": ${problem.solution.verificationNotes}`,
-          type: 'solution_submitted',
+          type: 'solution_changes_requested',
         });
       }
 
@@ -678,7 +678,7 @@ const verifySolution = async (req, res) => {
           problem: problem._id,
           title: 'Submitted Solution Rejected',
           message: `Your solution for "${problem.title}" was not approved: ${problem.solution.verificationNotes}`,
-          type: 'problem_rejected',
+          type: 'solution_rejected',
         });
       }
 

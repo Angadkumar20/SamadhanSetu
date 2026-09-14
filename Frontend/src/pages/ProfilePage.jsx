@@ -101,6 +101,10 @@ function ProfilePage() {
     }
   };
 
+  const verificationLabel = user?.role === 'citizen'
+    ? (user?.isEmailVerified ? 'Email verified' : 'Email unverified')
+    : (user?.verificationStatus || (user?.isVerified ? 'Verified' : 'Pending Verification'));
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
       <Navbar role={storedRole} />
@@ -139,6 +143,27 @@ function ProfilePage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-5 border-b border-slate-100">
+                <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Account status</p>
+                  <p className={`mt-1 text-sm font-bold ${user?.isActive === false ? 'text-red-700' : 'text-emerald-700'}`}>
+                    {user?.isActive === false ? 'Inactive' : 'Active'}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Verification</p>
+                  <p className={`mt-1 text-sm font-bold ${user?.isVerified || user?.isEmailVerified ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    {verificationLabel}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Institution</p>
+                  <p className="mt-1 text-sm font-bold text-slate-800 truncate" title={user?.organization || undefined}>
+                    {user?.organization || 'Not provided'}
+                  </p>
+                </div>
+              </div>
+
               {/* Email (Read-only) */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">

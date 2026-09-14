@@ -483,6 +483,10 @@ const updateProfile = async (req, res) => {
         phone: user.phone,
         organization: user.organization,
         isEmailVerified: Boolean(user.isEmailVerified),
+        isVerified: Boolean(user.isVerified),
+        verificationStatus: user.verificationStatus,
+        isActive: Boolean(user.isActive),
+        createdAt: user.createdAt,
       },
     });
   } catch (error) {

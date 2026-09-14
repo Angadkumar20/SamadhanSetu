@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AVAILABLE_LANGUAGES } from '../i18n';
 import api from '../api/axios';
 import useClickOutside from '../hooks/useClickOutside';
+import BrandMark from './BrandMark';
 
 /**
  * Unified Responsive Navbar Component
@@ -107,8 +108,22 @@ function Navbar({ role: propRole, onRefresh }) {
     try {
       await api.put('/notifications/read-all');
       setUnreadCount(0);
-      setNotifications(notifications.map((n) => ({ ...n, read: true })));
+      setNotifications((currentNotifications) =>
+        currentNotifications.map((notification) => ({ ...notification, read: true }))
+      );
       setNotificationsOpen(false);
+    } catch (e) {}
+  };
+
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      await api.put(`/notifications/${notificationId}/read`);
+      setNotifications((currentNotifications) =>
+        currentNotifications.map((notification) =>
+          notification._id === notificationId ? { ...notification, read: true } : notification
+        )
+      );
+      setUnreadCount((currentCount) => Math.max(0, currentCount - 1));
     } catch (e) {}
   };
 
@@ -142,9 +157,7 @@ function Navbar({ role: propRole, onRefresh }) {
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-1 sm:gap-4">
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-2 sm:gap-3 group min-w-0 shrink">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-600 flex items-center justify-center text-white font-bold text-xl shadow-md group-hover:scale-105 transition-transform">
-            SS
-          </div>
+          <BrandMark compact />
           <div className="min-w-0">
             <span className="text-lg sm:text-xl font-bold text-slate-800 tracking-tight block truncate group-hover:text-emerald-700 transition-colors">
               Samadhan<span className="text-emerald-600">Setu</span>
@@ -270,7 +283,7 @@ function Navbar({ role: propRole, onRefresh }) {
           {activeRole ? (
             <>
               {/* Notifications Button */}
-              <div className="relative" ref={notificationsRef}>
+              <div id="notifications" className="relative" ref={notificationsRef}>
                 <button
                   type="button"
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
@@ -309,20 +322,25 @@ function Navbar({ role: propRole, onRefresh }) {
                         </p>
                       ) : (
                         notifications.map((notif) => (
-                          <div
+                          <button
+                            type="button"
                             key={notif._id}
+                            onClick={() => !notif.read && handleMarkAsRead(notif._id)}
                             className={`p-2.5 rounded-lg border ${
                               notif.read
                                 ? 'bg-slate-50/50 border-slate-100'
-                                : 'bg-emerald-50/50 border-emerald-200'
-                            }`}
+                                : 'bg-emerald-50/50 border-emerald-200 hover:bg-emerald-50'
+                            } text-left w-full transition-colors ${notif.read ? '' : 'cursor-pointer'}`}
                           >
-                            <p className="font-bold text-slate-800">{notif.title}</p>
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="font-bold text-slate-800">{notif.title}</p>
+                              {!notif.read && <span className="mt-1 w-2 h-2 shrink-0 rounded-full bg-emerald-600" aria-label="Unread" />}
+                            </div>
                             <p className="text-[11px] text-slate-600 mt-0.5">{notif.message}</p>
                             <span className="text-[10px] text-slate-400 block mt-1">
                               {new Date(notif.createdAt).toLocaleString()}
                             </span>
-                          </div>
+                          </button>
                         ))
                       )}
                     </div>

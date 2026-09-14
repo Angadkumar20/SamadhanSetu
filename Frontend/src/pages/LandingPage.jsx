@@ -3,6 +3,50 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Navbar from '../components/Navbar';
 import api from '../api/axios';
+import BrandMark from '../components/BrandMark';
+import CivicIllustration from '../components/CivicIllustration';
+
+function WorkflowIllustration() {
+  const nodes = [
+    { x: 38, label: 'Citizen', icon: 'person' },
+    { x: 134, label: 'Review', icon: 'gov' },
+    { x: 230, label: 'Collaborate', icon: 'people' },
+    { x: 326, label: 'Develop', icon: 'tools' },
+    { x: 422, label: 'Solved', icon: 'check' },
+  ];
+
+  return (
+    <div className="workflow-visual" aria-label="Citizen report to solved problem workflow">
+      <div className="workflow-visual__header">
+        <span className="workflow-visual__eyebrow">A clear path from voice to impact</span>
+        <span className="workflow-visual__status"><span /> Live civic process</span>
+      </div>
+      <svg viewBox="0 0 460 142" role="img" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="workflowLine" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#0f766e" />
+            <stop offset="1" stopColor="#15803d" />
+          </linearGradient>
+        </defs>
+        <path d="M38 54H422" stroke="#cbd5e1" strokeWidth="3" strokeDasharray="5 7" />
+        <path d="M38 54H422" stroke="url(#workflowLine)" strokeWidth="3" strokeLinecap="round" />
+        {nodes.map((node, index) => (
+          <g key={node.label} transform={`translate(${node.x} 54)`}>
+            <circle r="20" fill={index === nodes.length - 1 ? '#166534' : '#0f766e'} />
+            <circle r="25" fill="none" stroke={index === nodes.length - 1 ? '#bbf7d0' : '#99f6e4'} strokeWidth="2" />
+            {node.icon === 'person' && <><circle cy="-6" r="4" fill="white" /><path d="M-8 10c1-8 15-8 16 0" stroke="white" strokeWidth="3" strokeLinecap="round" /></>}
+            {node.icon === 'gov' && <><path d="M-10-5 0-11 10-5" stroke="white" strokeWidth="2" strokeLinejoin="round" /><path d="M-8-3v9m4-9v9m8-9v9m4-9v9M-11 9h22" stroke="white" strokeWidth="2" strokeLinecap="round" /></>}
+            {node.icon === 'people' && <><circle cx="-5" cy="-5" r="3" fill="white" /><circle cx="6" cy="-5" r="3" fill="white" /><path d="M-11 8c1-6 9-6 11 0m-1 0c1-6 9-6 11 0" stroke="white" strokeWidth="2" strokeLinecap="round" /></>}
+            {node.icon === 'tools' && <><path d="m-9 8 13-13" stroke="white" strokeWidth="3" strokeLinecap="round" /><path d="m3-7 4-4 4 4-4 4M-10 11l4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></>}
+            {node.icon === 'check' && <path d="m-9 1 6 6L10-7" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />}
+            <text y="48" textAnchor="middle" className="workflow-visual__label">{node.label}</text>
+          </g>
+        ))}
+      </svg>
+      <div className="workflow-visual__footer"><span>Report</span><span>Validate</span><span>Build together</span><span>Deliver</span><strong>Resolve</strong></div>
+    </div>
+  );
+}
 
 /**
  * LandingPage Component
@@ -212,7 +256,8 @@ function LandingPage() {
         {/* ========================================================
             HERO SECTION
            ======================================================== */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-emerald-50/70 via-white to-slate-50 border-b border-slate-200 py-16 sm:py-24">
+        <section className="relative overflow-hidden civic-hero border-b border-slate-200 py-12 sm:py-20">
+          <div className="civic-hero__seal" aria-hidden="true"><BrandMark /></div>
           <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center">
             
             {/* Government Attribution Badge */}
@@ -264,6 +309,15 @@ function LandingPage() {
             <div className="mt-6 text-xs text-slate-500">
               Built for Problem Statement SIH26043 &bull; Closed, Verified Network with District Oversight
             </div>
+
+            <div className="hero-photo-band" role="img" aria-label="People celebrating community progress together">
+              <div className="hero-photo-band__caption">
+                <span>People. Progress. Public service.</span>
+                <strong>Better outcomes begin with being heard.</strong>
+              </div>
+            </div>
+
+            <WorkflowIllustration />
 
           </div>
         </section>
@@ -417,6 +471,20 @@ function LandingPage() {
                 </p>
               </div>
 
+              <div className="citizen-story-panel mt-6">
+                <CivicIllustration />
+                <div className="citizen-story-panel__copy">
+                  <span className="text-xs font-bold uppercase tracking-widest text-emerald-700">Your voice creates change</span>
+                  <h3 className="mt-2 text-xl sm:text-2xl font-extrabold text-slate-900">From a local concern to a shared solution.</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">Government teams listen, verified institutions collaborate, and practical technology helps communities move forward.</p>
+                  <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold text-slate-600">
+                    <span className="civic-chip">Civic voice</span>
+                    <span className="civic-chip">Trusted review</span>
+                    <span className="civic-chip">Public impact</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Your Overview Metrics */}
               <div className="mt-8">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">
@@ -447,7 +515,7 @@ function LandingPage() {
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">
                   Quick Actions
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <Link
                     to="/report-problem"
                     className="p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/30 transition-all flex items-center gap-3 group"
@@ -486,6 +554,19 @@ function LandingPage() {
                       <p className="text-xs text-slate-500">24 Districts real-time stats</p>
                     </div>
                   </Link>
+
+                  <a
+                    href="#notifications"
+                    className="p-4 rounded-2xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/30 transition-all flex items-center gap-3 group"
+                  >
+                    <span className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </span>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">Check Notifications</p>
+                      <p className="text-xs text-slate-500">Stay updated on every milestone</p>
+                    </div>
+                  </a>
                 </div>
               </div>
               </div>

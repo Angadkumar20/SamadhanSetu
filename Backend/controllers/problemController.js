@@ -448,10 +448,12 @@ const acceptProblem = async (req, res) => {
       return res.status(403).json({ message: 'This problem is not assigned to your institution' });
     }
 
+    let assignmentAccepted = false;
     if (problem.assignedInstitutions) {
       problem.assignedInstitutions.forEach((item) => {
-        if (item.institution.equals(req.user._id)) {
+        if (item.institution.equals(req.user._id) && item.status !== 'accepted') {
           item.status = 'accepted';
+          assignmentAccepted = true;
         }
       });
     }
@@ -464,6 +466,20 @@ const acceptProblem = async (req, res) => {
     });
 
     await problem.save();
+
+    if (assignmentAccepted) {
+      try {
+        await Notification.create({
+          recipient: problem.submittedBy,
+          problem: problem._id,
+          title: 'Assignment Accepted by Institution',
+          message: `${req.user.organization || req.user.name} accepted the assignment for "${problem.title}".`,
+          type: 'assignment_accepted',
+        });
+      } catch (notificationError) {
+        console.warn('Notification error:', notificationError.message);
+      }
+    }
 
     return res.status(200).json({
       message: 'Assignment accepted successfully',

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import i18n from '../i18n';
+import BrandMark from '../components/BrandMark';
 
 /**
  * LoginPage Component
@@ -142,9 +143,7 @@ function LoginPage() {
       {/* Top Header & Logo */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <Link to="/" className="inline-flex items-center gap-2 mb-4 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-105 transition-transform">
-            SS
-          </div>
+          <BrandMark compact />
           <span className="text-2xl font-bold text-slate-800">
             Samadhan<span className="text-emerald-600">Setu</span>
           </span>

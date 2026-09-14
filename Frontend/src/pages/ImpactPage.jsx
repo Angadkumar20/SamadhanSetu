@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../api/axios';
+import CivicIllustration from '../components/CivicIllustration';
 import {
   Bar,
   BarChart,
@@ -197,6 +198,20 @@ function ImpactPage() {
           <p className="mt-2 text-sm text-slate-600">
             Real-time status of civic problems reported by citizens, verified by government administrators, and engineered by university labs across Jharkhand.
           </p>
+        </div>
+
+        <div className="impact-story-panel mb-10">
+          <CivicIllustration variant="network" />
+          <div className="impact-story-panel__copy">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-700">Public progress, made visible</span>
+            <h2 className="mt-2 text-xl sm:text-2xl font-extrabold text-slate-900">Every number represents people working together.</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">Explore how citizen reports connect with government review, university research, and industry capability to create measurable community outcomes.</p>
+            <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold text-slate-600">
+              <span><strong className="text-emerald-700">01</strong> Listen</span>
+              <span><strong className="text-sky-700">02</strong> Collaborate</span>
+              <span><strong className="text-amber-700">03</strong> Deliver</span>
+            </div>
+          </div>
         </div>
 
         {/* 4 Primary Metric Cards */}
