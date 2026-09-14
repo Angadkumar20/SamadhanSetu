@@ -361,18 +361,36 @@ function LandingPage() {
           /* ========================================================
               LOGGED-IN CITIZEN PERSONALIZED HOME HUB
              ======================================================== */
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-            <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-200">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+          <section className="relative overflow-hidden border-y border-emerald-100 bg-emerald-50/50 py-12 sm:py-16">
+            <div
+              className="absolute inset-0 opacity-60"
+              style={{
+                backgroundImage:
+                  'linear-gradient(rgba(5, 150, 105, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(5, 150, 105, 0.07) 1px, transparent 1px)',
+                backgroundSize: '44px 44px',
+              }}
+              aria-hidden="true"
+            />
+            <div className="absolute -right-24 -top-28 hidden h-72 w-72 rounded-full border-[18px] border-emerald-200/40 sm:block" aria-hidden="true" />
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
+              <div className="bg-white/90 rounded-3xl p-6 sm:p-10 shadow-lg shadow-emerald-900/5 border border-white/80 backdrop-blur-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-emerald-100">
                 <div>
-                  <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest block mb-1">
-                    Citizen Action Hub
-                  </span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-8 h-8 rounded-lg bg-emerald-700 text-amber-200 flex items-center justify-center shadow-sm">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M12 2l2.2 5.6L20 10l-5.8 2.2L12 18l-2.2-5.8L4 10l5.8-2.4L12 2z" />
+                      </svg>
+                    </span>
+                    <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest">
+                      Citizen Action Hub
+                    </span>
+                  </div>
                   <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                     {t('auth.welcomeBack', 'Welcome Back')}, {userName}
                   </h2>
                   <p className="text-slate-600 text-sm mt-1">
-                    Track your reported civic issues and collaborate with research solvers.
+                    Track your reported civic issues and help Jharkhand build better local solutions.
                   </p>
                 </div>
 
@@ -384,12 +402,19 @@ function LandingPage() {
                     <span>+ {t('problem.submitProblem', 'Report a Problem')}</span>
                   </Link>
                   <Link
-                    to="/citizen/dashboard"
+                    to="/my-submissions"
                     className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors"
                   >
-                    Full Dashboard &rarr;
+                    View My Submissions &rarr;
                   </Link>
                 </div>
+              </div>
+
+              <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50/70 px-4 py-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700 font-bold">i</span>
+                <p className="text-xs leading-relaxed text-sky-900">
+                  Share a clear description, location, and any helpful evidence when reporting a civic problem. Your submission is reviewed before it reaches verified research and industry partners.
+                </p>
               </div>
 
               {/* Your Overview Metrics */}
@@ -462,6 +487,7 @@ function LandingPage() {
                     </div>
                   </Link>
                 </div>
+              </div>
               </div>
             </div>
           </section>

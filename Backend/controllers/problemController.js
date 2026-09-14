@@ -781,7 +781,9 @@ const getPublicStats = async (req, res) => {
       totalIndustries,
       byCategory,
       byLocation,
+      byStatus,
       recentSolvedProblems,
+      problems,
     ] = await Promise.all([
       Problem.countDocuments(),
       Problem.countDocuments({ status: 'pending' }),
@@ -804,10 +806,23 @@ const getPublicStats = async (req, res) => {
         { $sort: { count: -1 } },
         { $limit: 24 },
       ]),
+      Problem.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]),
       Problem.find({ status: 'solved' })
         .select('title category district state createdAt updatedAt')
         .sort({ updatedAt: -1 })
         .limit(5),
+      Problem.find({})
+        .select(
+          'title category district state status assignedUniversity collaboratingIndustries assignedInstitutions solution.title solution.verificationStatus solution.expectedImpact createdAt updatedAt',
+        )
+        .populate('assignedUniversity', 'name organization role')
+        .populate('collaboratingIndustries', 'name organization role')
+        .populate('assignedInstitutions.institution', 'name organization role')
+        .sort({ createdAt: -1 })
+        .lean(),
     ]);
 
     const resolutionRate =
@@ -827,7 +842,9 @@ const getPublicStats = async (req, res) => {
       totalIndustries,
       byCategory,
       byLocation,
+      byStatus,
       recentSolvedProblems,
+      problems,
       mostCommonCategory: byCategory[0]?._id || 'General',
       mostAffectedDistrict: byLocation[0]?._id || 'Ranchi',
     });

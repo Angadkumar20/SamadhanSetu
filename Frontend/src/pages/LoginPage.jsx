@@ -75,7 +75,10 @@ function LoginPage() {
           localStorage.setItem('isEmailVerified', String(user.isEmailVerified));
         }
 
-        // Automatically load and apply the user's saved language
+        const isNewUser =
+          localStorage.getItem('pendingLanguageSelection') === 'true' &&
+          localStorage.getItem('pendingLanguageEmail') === normalizedEmail &&
+          localStorage.getItem('pendingLanguageRole') === role;
         const userLanguage = user?.language || localStorage.getItem('language') || 'en';
         localStorage.setItem('language', userLanguage);
         i18n.changeLanguage(userLanguage);
@@ -89,9 +92,7 @@ function LoginPage() {
         };
         const targetDashboard = dashboardRoutes[role] || `/${role}/dashboard`;
 
-        // Only show language selection if a genuinely new user has no language preference.
-        // For old users with no language saved: Default to English automatically and do not repeatedly force selection.
-        if (user && user.hasSelectedLanguage === false && !localStorage.getItem('userHasSelectedLanguage')) {
+        if (isNewUser) {
           navigate(`/select-language/${role}`);
         } else {
           localStorage.setItem('userHasSelectedLanguage', 'true');

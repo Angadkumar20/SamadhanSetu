@@ -83,9 +83,16 @@ function RegisterPage() {
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('role', role);
+        localStorage.setItem('pendingLanguageSelection', 'true');
+        localStorage.setItem('pendingLanguageEmail', normalizedEmail);
+        localStorage.setItem('pendingLanguageRole', role);
         if (response.data.user && response.data.user.name) {
           localStorage.setItem('userName', response.data.user.name);
         }
+      } else {
+        localStorage.setItem('pendingLanguageSelection', 'true');
+        localStorage.setItem('pendingLanguageEmail', normalizedEmail);
+        localStorage.setItem('pendingLanguageRole', role);
       }
 
       setRegisteredEmail(normalizedEmail);

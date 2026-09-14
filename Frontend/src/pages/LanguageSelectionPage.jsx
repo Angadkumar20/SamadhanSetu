@@ -26,6 +26,9 @@ function LanguageSelectionPage() {
     i18n.changeLanguage(selectedLanguage);
     localStorage.setItem('language', selectedLanguage);
     localStorage.setItem('userHasSelectedLanguage', 'true');
+    localStorage.removeItem('pendingLanguageSelection');
+    localStorage.removeItem('pendingLanguageEmail');
+    localStorage.removeItem('pendingLanguageRole');
     
     // If user is authenticated, persist preference in MongoDB
     const token = localStorage.getItem('token');
@@ -46,7 +49,12 @@ function LanguageSelectionPage() {
   };
 
   const handleSkip = () => {
+    i18n.changeLanguage(selectedLanguage);
+    localStorage.setItem('language', selectedLanguage);
     localStorage.setItem('userHasSelectedLanguage', 'true');
+    localStorage.removeItem('pendingLanguageSelection');
+    localStorage.removeItem('pendingLanguageEmail');
+    localStorage.removeItem('pendingLanguageRole');
     const dashboardRoutes = {
       citizen: '/citizen/dashboard',
       university: '/university/dashboard',

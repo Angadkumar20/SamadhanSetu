@@ -51,6 +51,8 @@ const resources = {
   as: { translation: asTranslation },
 };
 
+const supportedLanguageCodes = AVAILABLE_LANGUAGES.map(({ code }) => code);
+
 // Global RTL / LTR direction handler
 export const applyDirection = (lng) => {
   if (lng === 'ur') {
@@ -73,6 +75,8 @@ i18n
     resources,
     lng: savedLanguage,
     fallbackLng: 'en',
+    supportedLngs: supportedLanguageCodes,
+    load: 'languageOnly',
     interpolation: {
       escapeValue: false, // React already safeguards against XSS
     },

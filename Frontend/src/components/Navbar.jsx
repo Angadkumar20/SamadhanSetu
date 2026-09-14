@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AVAILABLE_LANGUAGES } from '../i18n';
@@ -30,11 +30,20 @@ function Navbar({ role: propRole, onRefresh }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const mobileMenuToggleRef = useRef(null);
 
   // Click-outside listeners to automatically close open panels/dropdowns
   const languageMenuRef = useClickOutside(() => setLanguageMenuOpen(false), languageMenuOpen);
   const notificationsRef = useClickOutside(() => setNotificationsOpen(false), notificationsOpen);
   const profileRef = useClickOutside(() => setProfileOpen(false), profileOpen);
+  const mobileMenuRef = useClickOutside(
+    (event) => {
+      if (!mobileMenuToggleRef.current?.contains(event.target)) {
+        setMobileMenuOpen(false);
+      }
+    },
+    mobileMenuOpen,
+  );
 
   // Notifications live state
   const [notifications, setNotifications] = useState([]);
@@ -91,12 +100,15 @@ function Navbar({ role: propRole, onRefresh }) {
     }
   };
 
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
   // Mark all notifications read
   const handleMarkAllRead = async () => {
     try {
       await api.put('/notifications/read-all');
       setUnreadCount(0);
       setNotifications(notifications.map((n) => ({ ...n, read: true })));
+      setNotificationsOpen(false);
     } catch (e) {}
   };
 
@@ -116,7 +128,7 @@ function Navbar({ role: propRole, onRefresh }) {
             <span className="text-slate-400 hidden sm:inline">&bull; Built for Problem ID: SIH26043</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3">
             <Link to="/impact" className="hover:text-white transition-colors">
               {t('nav.impact')}
             </Link>
@@ -127,14 +139,14 @@ function Navbar({ role: propRole, onRefresh }) {
       </div>
 
       {/* Main Navbar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-1 sm:gap-4">
         {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-3 group shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-600 flex items-center justify-center text-white font-bold text-xl shadow-md group-hover:scale-105 transition-transform">
+        <Link to="/" className="flex items-center gap-2 sm:gap-3 group min-w-0 shrink">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-600 flex items-center justify-center text-white font-bold text-xl shadow-md group-hover:scale-105 transition-transform">
             SS
           </div>
-          <div>
-            <span className="text-xl font-bold text-slate-800 tracking-tight block group-hover:text-emerald-700 transition-colors">
+          <div className="min-w-0">
+            <span className="text-lg sm:text-xl font-bold text-slate-800 tracking-tight block truncate group-hover:text-emerald-700 transition-colors">
               Samadhan<span className="text-emerald-600">Setu</span>
             </span>
             <span className="text-[10px] text-slate-400 tracking-wider uppercase font-semibold hidden sm:block">
@@ -207,19 +219,19 @@ function Navbar({ role: propRole, onRefresh }) {
         </nav>
 
         {/* Right Tools: Language, Notifications, Profile, Refresh, Logout/Login */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 shrink-0 items-center justify-end gap-1 sm:gap-3">
           {/* Language Selector Dropdown */}
           <div className="relative" ref={languageMenuRef}>
             <button
               type="button"
               onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors"
+              className="flex shrink-0 items-center gap-1 px-1.5 sm:gap-1.5 sm:px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors"
               title={t('nav.language')}
             >
               <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
               </svg>
-              <span>{currentLangObj.nativeName}</span>
+              <span className="hidden min-[400px]:inline">{currentLangObj.nativeName}</span>
               <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
               </svg>
@@ -277,7 +289,7 @@ function Navbar({ role: propRole, onRefresh }) {
 
                 {/* Notifications Popup */}
                 {notificationsOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-xl p-3 z-50 text-xs">
+                  <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-1rem))] bg-white border border-slate-200 rounded-xl shadow-xl p-3 z-50 text-xs">
                     <div className="font-bold text-slate-800 pb-2 border-b border-slate-100 flex items-center justify-between">
                       <span>{t('nav.notifications')}</span>
                       {unreadCount > 0 && (
@@ -340,7 +352,7 @@ function Navbar({ role: propRole, onRefresh }) {
                 <button
                   type="button"
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors"
+                  className="flex shrink-0 items-center gap-1.5 px-1.5 sm:px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors"
                   title={t('nav.profile')}
                 >
                   <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[10px]">
@@ -423,8 +435,9 @@ function Navbar({ role: propRole, onRefresh }) {
           {/* Mobile Menu Toggle Button */}
           <button
             type="button"
+            ref={mobileMenuToggleRef}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+            className="lg:hidden shrink-0 p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
             title="Toggle navigation"
           >
             {mobileMenuOpen ? (
@@ -442,70 +455,70 @@ function Navbar({ role: propRole, onRefresh }) {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-2 shadow-lg">
+        <div ref={mobileMenuRef} className="lg:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-2 shadow-lg">
           {!activeRole ? (
             <>
-              <Link to="/" className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <Link to="/" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 {t('nav.home')}
               </Link>
-              <a href="/#about" className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <a href="/#about" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 {t('nav.about')}
               </a>
-              <Link to="/impact" className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <Link to="/impact" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 {t('nav.impact')}
               </Link>
-              <a href="/#faqs" className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <a href="/#faqs" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 {t('nav.faqs')}
               </a>
-              <a href="/#contact" className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <a href="/#contact" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 {t('nav.contact')}
               </a>
             </>
           ) : activeRole === 'citizen' ? (
             <>
-              <Link to="/" className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <Link to="/" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 {t('nav.home')}
               </Link>
-              <Link to="/my-submissions" className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <Link to="/my-submissions" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 My Submissions
               </Link>
-              <Link to="/report-problem" className="block py-2 text-sm font-medium text-emerald-700 font-bold">
+              <Link to="/report-problem" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-emerald-700 font-bold">
                 + Report Problem
               </Link>
-              <Link to="/impact" className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <Link to="/impact" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 {t('nav.impact')}
               </Link>
-              <Link to="/profile" className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <Link to="/profile" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 Profile
               </Link>
             </>
           ) : activeRole === 'admin' ? (
             <>
-              <Link to="/admin/dashboard" className="block py-2 text-sm font-bold text-slate-900">
+              <Link to="/admin/dashboard" onClick={closeMobileMenu} className="block py-2 text-sm font-bold text-slate-900">
                 Admin Dashboard
               </Link>
-              <Link to="/admin/institutions" className="block py-2 text-sm font-medium text-slate-700 hover:text-slate-900">
+              <Link to="/admin/institutions" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-slate-900">
                 Verified Institutions
               </Link>
-              <Link to="/impact" className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <Link to="/impact" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 {t('nav.impact')}
               </Link>
-              <Link to="/profile" className="block py-2 text-sm font-medium text-slate-700 hover:text-slate-900">
+              <Link to="/profile" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-slate-900">
                 Profile
               </Link>
             </>
           ) : (
             <>
-              <Link to={`/${activeRole}/dashboard`} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <Link to={`/${activeRole}/dashboard`} onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 {t('nav.dashboard')}
               </Link>
-              <a href={`/${activeRole}/dashboard#problems-list`} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <a href={`/${activeRole}/dashboard#problems-list`} onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 {t('nav.browseChallenges')}
               </a>
-              <Link to="/impact" className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <Link to="/impact" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 {t('nav.impact')}
               </Link>
-              <Link to="/profile" className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
+              <Link to="/profile" onClick={closeMobileMenu} className="block py-2 text-sm font-medium text-slate-700 hover:text-emerald-600">
                 Profile
               </Link>
             </>
@@ -515,7 +528,10 @@ function Navbar({ role: propRole, onRefresh }) {
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
               <span className="text-xs text-slate-500">Logged in as {userName}</span>
               <button
-                onClick={handleLogout}
+                onClick={() => {
+                  closeMobileMenu();
+                  handleLogout();
+                }}
                 className="text-xs font-semibold text-red-600 hover:underline"
               >
                 {t('nav.logout')}
