@@ -44,6 +44,32 @@ const CATEGORY_KEYWORDS = {
   ],
 };
 
+const DEPARTMENT_BY_CATEGORY = {
+  Education: 'Education Department',
+  Healthcare: 'Health Department',
+  Agriculture: 'Agriculture Department',
+  'Water Resources': 'Drinking Water / Water Supply Department',
+  Environment: 'Environment & Sanitation Services',
+  Energy: 'Electricity / Energy Department',
+  'Urban Development': 'Public Works / Road Infrastructure',
+  'Urban Infrastructure': 'Public Works / Road Infrastructure',
+  Accessibility: 'Social Welfare & Accessibility Services',
+  'Public Administration': 'Public Administration Department',
+  'Rural Livelihoods': 'Rural Development / Livelihoods Department',
+};
+
+const PRIORITY_RULES = {
+  high: [
+    /immediate|urgent|emergency/,
+    /danger|unsafe|life[- ]?threat|accident|collapse|fire|flood|poison|contaminat|outbreak|epidemic/,
+    /no drinking water|water shortage|shortage of safe drinking water|safe drinking water shortage|power failure|blackout|major leak|many people|entire village|whole community|hundreds|thousands/,
+    /death|dying|severe|critical|serious injury|health hazard|safety hazard/,
+  ],
+  medium: [
+    /shortage|frequent|damaged|broken|blocked|delay|lack of|insufficient|poor condition|affecting residents|community/,
+  ],
+};
+
 /**
  * Local lightweight keyword classifier as dependable fallback
  */
@@ -98,8 +124,52 @@ const classifyProblem = async (title, description) => {
   return localClassify(title, description);
 };
 
+const classifyPriority = (title, description) => {
+  const text = `${title || ''} ${description || ''}`.toLowerCase();
+  if (PRIORITY_RULES.high.some((rule) => rule.test(text))) return 'high';
+  if (PRIORITY_RULES.medium.some((rule) => rule.test(text))) return 'medium';
+  return 'low';
+};
+
+const createSummary = (title, description) => {
+  const cleanTitle = String(title || '').trim();
+  const cleanDescription = String(description || '').replace(/\s+/g, ' ').trim();
+  const firstSentence = cleanDescription.split(/(?<=[.!?])\s+/)[0] || cleanDescription;
+  const summary = firstSentence.length > 180 ? `${firstSentence.slice(0, 177).trim()}...` : firstSentence;
+  return cleanTitle && summary
+    ? `${cleanTitle}: ${summary}`
+    : cleanTitle || summary || 'A civic problem was reported for review.';
+};
+
+const suggestDepartment = (category, title, description) => {
+  const categoryDepartment = DEPARTMENT_BY_CATEGORY[category];
+  if (categoryDepartment) return categoryDepartment;
+
+  const detectedCategory = localClassify(title, description);
+  return DEPARTMENT_BY_CATEGORY[detectedCategory] || 'Relevant Government Department';
+};
+
+const buildProblemInsights = async (title, description, category) => {
+  let detectedCategory = category;
+  if (!detectedCategory || detectedCategory === 'Other') {
+    detectedCategory = await classifyProblem(title, description);
+  }
+
+  return {
+    category: detectedCategory || localClassify(title, description),
+    priority: classifyPriority(title, description),
+    summary: createSummary(title, description),
+    suggestedDepartment: suggestDepartment(detectedCategory, title, description),
+  };
+};
+
 module.exports = {
   classifyProblem,
   localClassify,
+  classifyPriority,
+  createSummary,
+  suggestDepartment,
+  buildProblemInsights,
   CATEGORY_KEYWORDS,
+  DEPARTMENT_BY_CATEGORY,
 };

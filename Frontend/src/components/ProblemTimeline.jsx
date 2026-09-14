@@ -12,7 +12,7 @@ import React from 'react';
  * 7. Government Verified
  * 8. Solved (or Rejected)
  */
-function ProblemTimeline({ status, timeline = [], detailed = false }) {
+function ProblemTimeline({ status, timeline = [], detailed = false, problem = null }) {
   const normalizedStatus = (status || 'pending').toLowerCase();
 
   // If problem is rejected, show a clear rejected state
@@ -20,14 +20,14 @@ function ProblemTimeline({ status, timeline = [], detailed = false }) {
 
   // Standard ordered lifecycle stages
   const stages = [
-    { key: 'submitted', label: '1. Submitted', desc: 'Problem logged by citizen' },
-    { key: 'under_review', label: '2. Under Review', desc: 'Administrative scrutiny' },
-    { key: 'approved', label: '3. Approved', desc: 'Approved for matching' },
-    { key: 'assigned', label: '4. Institution Assigned', desc: 'Verified partners assigned' },
-    { key: 'in_progress', label: '5. Work In Progress', desc: 'Research & engineering active' },
-    { key: 'solution_submitted', label: '6. Solution Submitted', desc: 'Awaiting government verification' },
-    { key: 'government_verified', label: '7. Govt Verified', desc: 'Official evaluation passed' },
-    { key: 'solved', label: '8. Solved', desc: 'Civic issue resolved' },
+    { key: 'submitted', label: 'Reported', desc: 'Problem logged by citizen', icon: '↗' },
+    { key: 'under_review', label: 'Government Review', desc: 'Administrative scrutiny', icon: '⌕' },
+    { key: 'approved', label: 'Approved', desc: 'Approved for matching', icon: '✓' },
+    { key: 'assigned', label: 'Assigned', desc: 'Verified partners assigned', icon: '↔' },
+    { key: 'in_progress', label: 'Work Started', desc: 'Research and engineering active', icon: '⚙' },
+    { key: 'solution_submitted', label: 'Solution Submitted', desc: 'Awaiting government verification', icon: '□' },
+    { key: 'government_verified', label: 'Government Verification', desc: 'Official evaluation passed', icon: '◆' },
+    { key: 'solved', label: 'Solved', desc: 'Civic issue resolved', icon: '✓' },
   ];
 
   // Determine stage index
@@ -43,6 +43,20 @@ function ProblemTimeline({ status, timeline = [], detailed = false }) {
   };
 
   const currentIndex = statusToStageIndex[normalizedStatus] !== undefined ? statusToStageIndex[normalizedStatus] : 0;
+
+  const progressUpdates = Array.isArray(problem?.progressUpdates) ? problem.progressUpdates : [];
+  const latestProgress = progressUpdates.length > 0
+    ? progressUpdates[progressUpdates.length - 1]?.progressPercentage
+    : null;
+  const assignedNames = [
+    problem?.assignedUniversity?.organization || problem?.assignedUniversity?.name,
+    ...(Array.isArray(problem?.assignedInstitutions)
+      ? problem.assignedInstitutions.map((item) => item.institution?.organization || item.institution?.name).filter(Boolean)
+      : []),
+    ...(Array.isArray(problem?.collaboratingIndustries)
+      ? problem.collaboratingIndustries.map((item) => item.organization || item.name).filter(Boolean)
+      : []),
+  ].filter(Boolean);
 
   // Find timeline events for metadata
   const findTimelineEvent = (stageKey) => {
@@ -72,6 +86,33 @@ function ProblemTimeline({ status, timeline = [], detailed = false }) {
 
   return (
     <div className="w-full py-3">
+      {problem && (
+        <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-700">Current Status</span>
+            <strong className="mt-1 block text-emerald-900">{normalizedStatus.replace('_', ' ')}</strong>
+          </div>
+          <div className="rounded-xl border border-sky-200 bg-sky-50/70 px-3 py-2">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-sky-700">Assigned To</span>
+            <strong className="mt-1 block truncate text-sky-900" title={assignedNames.join(', ')}>{assignedNames[0] || 'Awaiting assignment'}</strong>
+          </div>
+          <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-amber-700">Latest Progress</span>
+            <strong className="mt-1 block text-amber-900">{latestProgress === null ? 'Not started' : `${latestProgress}%`}</strong>
+          </div>
+        </div>
+      )}
+
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Problem Lifecycle</p>
+          <p className="text-xs text-slate-600 mt-0.5">Follow the report from citizen voice to verified resolution.</p>
+        </div>
+        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">
+          {normalizedStatus.replace('_', ' ')}
+        </span>
+      </div>
+
       {/* Mobile Vertical / Desktop Horizontal Flow */}
       <div className="hidden lg:flex items-center justify-between relative">
         {/* Connecting line behind items */}
@@ -99,7 +140,7 @@ function ProblemTimeline({ status, timeline = [], detailed = false }) {
                     : 'bg-white border-2 border-slate-300 text-slate-400'
                 }`}
               >
-                {isDone ? '✓' : idx + 1}
+                {isDone ? '✓' : stage.icon}
               </div>
 
               <span
@@ -154,7 +195,7 @@ function ProblemTimeline({ status, timeline = [], detailed = false }) {
                     : 'bg-slate-200 text-slate-500'
                 }`}
               >
-                {isDone ? '✓' : idx + 1}
+                {isDone ? '✓' : stage.icon}
               </div>
               <div className="text-xs">
                 <p className="font-bold">{stage.label}</p>

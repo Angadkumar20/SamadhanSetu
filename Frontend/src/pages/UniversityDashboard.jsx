@@ -360,7 +360,7 @@ function UniversityDashboard() {
 
                     {/* Timeline Snippet */}
                     <div className="mb-4 pt-3 border-t border-slate-100">
-                      <ProblemTimeline status={problem.status} timeline={problem.timeline} />
+                      <ProblemTimeline problem={problem} status={problem.status} timeline={problem.timeline} />
                     </div>
                   </div>
 

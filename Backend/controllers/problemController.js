@@ -4,7 +4,11 @@ const jwt = require('jsonwebtoken');
 const Problem = require('../models/Problem');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
-const { classifyProblem } = require('../utils/classifier');
+const {
+  classifyProblem,
+  localClassify,
+  buildProblemInsights,
+} = require('../utils/classifier');
 const { uploadDir } = require('../middleware/uploadMiddleware');
 
 /**
@@ -49,8 +53,26 @@ const createProblem = async (req, res) => {
     let categorySource = 'citizen';
 
     if (!finalCategory) {
-      finalCategory = await classifyProblem(trimmedTitle, trimmedDescription);
-      categorySource = 'ai';
+      try {
+        finalCategory = await classifyProblem(trimmedTitle, trimmedDescription);
+        categorySource = 'ai';
+      } catch (classificationError) {
+        console.warn('AI category unavailable, using local fallback:', classificationError.message);
+        finalCategory = localClassify(trimmedTitle, trimmedDescription);
+        categorySource = 'ai';
+      }
+    }
+
+    let aiInsights;
+    try {
+      aiInsights = await buildProblemInsights(trimmedTitle, trimmedDescription, finalCategory);
+    } catch (insightsError) {
+      console.warn('AI insights unavailable, using local fallback:', insightsError.message);
+      aiInsights = await buildProblemInsights(
+        trimmedTitle,
+        trimmedDescription,
+        localClassify(trimmedTitle, trimmedDescription),
+      );
     }
 
     // 3. Process Coordinates & Location
@@ -85,6 +107,7 @@ const createProblem = async (req, res) => {
       description: trimmedDescription,
       category: finalCategory,
       categorySource,
+      aiInsights,
       state: state ? String(state).trim() : 'Jharkhand',
       district: district ? String(district).trim() : '',
       landmark: landmark ? String(landmark).trim() : '',
@@ -95,6 +118,7 @@ const createProblem = async (req, res) => {
       imageUrl: mediaItems.length > 0 ? mediaItems[0].url : '',
       submittedBy: req.user._id,
       status: 'pending',
+      priority: aiInsights.priority,
       timeline: [
         {
           stage: 'submitted',

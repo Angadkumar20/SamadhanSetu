@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Navbar from '../components/Navbar';
 import api from '../api/axios';
+import AIInsightsCard from '../components/AIInsightsCard';
 
 /**
  * ReportProblemPage Component
@@ -313,6 +314,7 @@ function ReportProblemPage() {
       setSubmissionSuccess({
         id: response.data.referenceId || response.data.problem?._id,
         category: response.data.problem?.category || selectedCategory || aiSuggestedCategory,
+        aiInsights: response.data.problem?.aiInsights,
         district: response.data.problem?.district || district,
         createdAt: new Date().toLocaleDateString(),
       });
@@ -875,6 +877,13 @@ function ReportProblemPage() {
                   <span className="text-slate-500">Submission Date:</span>
                   <span className="text-slate-800">{submissionSuccess.createdAt}</span>
                 </div>
+              </div>
+
+              <div className="max-w-2xl mx-auto mb-8 text-left">
+                <AIInsightsCard
+                  insights={submissionSuccess.aiInsights}
+                  category={submissionSuccess.category}
+                />
               </div>
 
               {/* Action Buttons */}

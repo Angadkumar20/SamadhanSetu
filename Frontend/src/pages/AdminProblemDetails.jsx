@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import StatusBadge from '../components/StatusBadge';
 import ProblemTimeline from '../components/ProblemTimeline';
+import AIInsightsCard from '../components/AIInsightsCard';
 import api from '../api/axios';
 
 /**
@@ -287,7 +288,7 @@ function AdminProblemDetails() {
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
               Government Lifecycle Timeline
             </h3>
-            <ProblemTimeline status={problem.status} timeline={problem.timeline} detailed={true} />
+            <ProblemTimeline problem={problem} status={problem.status} timeline={problem.timeline} detailed={true} />
           </div>
         </div>
 
@@ -331,6 +332,8 @@ function AdminProblemDetails() {
                 )}
               </div>
             </div>
+
+            <AIInsightsCard insights={problem.aiInsights} category={problem.category} />
 
             {/* Evidence Media Viewer */}
             {problem.media && problem.media.length > 0 && (

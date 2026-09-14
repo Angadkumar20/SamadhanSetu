@@ -43,6 +43,16 @@ const problemSchema = new mongoose.Schema(
       enum: ['citizen', 'ai'],
       default: 'citizen',
     },
+    aiInsights: {
+      category: { type: String, default: 'Not available', trim: true },
+      priority: {
+        type: String,
+        enum: ['low', 'medium', 'high'],
+        default: 'medium',
+      },
+      summary: { type: String, default: 'AI summary not available.', trim: true },
+      suggestedDepartment: { type: String, default: 'Relevant Government Department', trim: true },
+    },
     state: {
       type: String,
       default: 'Jharkhand',

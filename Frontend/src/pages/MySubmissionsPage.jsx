@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../api/axios';
+import AIInsightsCard from '../components/AIInsightsCard';
+import ProblemTimeline from '../components/ProblemTimeline';
 
 /**
  * MySubmissionsPage Component
@@ -274,6 +276,22 @@ function MySubmissionsPage() {
               <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100 whitespace-pre-wrap">
                 {selectedProblem.description}
               </p>
+            </div>
+
+            <div className="mb-6">
+              <AIInsightsCard
+                insights={selectedProblem.aiInsights}
+                category={selectedProblem.category}
+              />
+            </div>
+
+            <div className="mb-6 rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+              <ProblemTimeline
+                problem={selectedProblem}
+                status={selectedProblem.status}
+                timeline={selectedProblem.timeline}
+                detailed={true}
+              />
             </div>
 
             {/* Assigned Academic Institution (if any) */}
