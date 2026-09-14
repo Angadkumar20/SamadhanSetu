@@ -27,6 +27,7 @@ function AdminProblemDetails() {
 
   // Verified institutions for assignment dropdown
   const [institutions, setInstitutions] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
   const [selectedUniversity, setSelectedUniversity] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState('');
   const [assignNotes, setAssignNotes] = useState('');
@@ -82,8 +83,9 @@ function AdminProblemDetails() {
 
   const fetchVerifiedInstitutions = async () => {
     try {
-      const res = await api.get('/admin/institutions?status=Verified');
+      const res = await api.get(`/admin/institutions?status=Verified&problemId=${id}`);
       setInstitutions(res.data.institutions || []);
+      setRecommendations(res.data.recommendations || []);
     } catch (err) {
       console.error('Error fetching verified institutions:', err);
     }
@@ -627,6 +629,55 @@ function AdminProblemDetails() {
               <p className="text-xs text-slate-500 mb-4">
                 Closed Verified Network: Assign verified academic and industry partners.
               </p>
+
+              <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Recommended Institutions</p>
+                    <p className="text-[11px] text-emerald-900 mt-1">Compatibility suggestions based on this problem's category and text.</p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200">Verified only</span>
+                </div>
+
+                {recommendations.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-emerald-200 bg-white/70 px-3 py-3 text-xs text-slate-600">
+                    No strong institution match found. Use the verified institution lists below for manual assignment.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {recommendations.map((institution) => (
+                      <div key={institution.id} className="rounded-lg border border-white bg-white p-3 shadow-xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-bold text-slate-900" title={institution.name}>{institution.name}</p>
+                            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                              {institution.type === 'university' ? 'University' : 'Industry'}
+                            </p>
+                          </div>
+                          <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-black text-emerald-800">
+                            {institution.matchScore}% Match
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <p className="min-w-0 truncate text-[11px] text-slate-600" title={institution.expertise}>
+                            <span className="font-bold text-slate-500">Expertise:</span> {institution.expertise}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (institution.type === 'university') setSelectedUniversity(institution.id);
+                              if (institution.type === 'industry') setSelectedIndustry(institution.id);
+                            }}
+                            className="shrink-0 rounded-lg border border-emerald-300 bg-white px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100"
+                          >
+                            Select
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <form onSubmit={handleAssignSubmit} className="space-y-3.5">
                 {/* University Selection */}

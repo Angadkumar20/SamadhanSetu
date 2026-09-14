@@ -22,6 +22,7 @@ function RegisterPage() {
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [organization, setOrganization] = useState('');
+  const [expertise, setExpertise] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   // Status feedback states
@@ -77,6 +78,7 @@ function RegisterPage() {
         role,
         phone: phone.trim(),
         organization: organization.trim(),
+        expertise: expertise.trim(),
       });
 
       // Save token if returned
@@ -224,6 +226,22 @@ function RegisterPage() {
                       }
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-all"
                     />
+                  </div>
+                )}
+
+                {role !== 'citizen' && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Areas of Expertise <span className="text-xs text-slate-400 font-normal">(Optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={expertise}
+                      onChange={(e) => setExpertise(e.target.value)}
+                      placeholder="e.g. Water Management, Civil Engineering"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-all"
+                    />
+                    <p className="mt-1 text-xs text-slate-400">Helps Government match your institution with relevant civic problems.</p>
                   </div>
                 )}
 

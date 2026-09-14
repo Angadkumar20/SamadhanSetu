@@ -24,7 +24,7 @@ const generateToken = (id, role) => {
  */
 const register = async (req, res) => {
   try {
-    const { name, email, password, role, phone, organization, language } = req.body;
+    const { name, email, password, role, phone, organization, expertise, language } = req.body;
 
     // 1. Validate required fields
     if (!name || !email || !password || !role) {
@@ -88,6 +88,7 @@ const register = async (req, res) => {
       role,
       phone: phone ? String(phone).trim() : '',
       organization: organization ? String(organization).trim() : '',
+      expertise: expertise ? String(expertise).trim() : '',
       language: language ? String(language).trim().toLowerCase() : 'en',
       hasSelectedLanguage: Boolean(language),
       isEmailVerified: false,
@@ -115,6 +116,7 @@ const register = async (req, res) => {
         hasSelectedLanguage: Boolean(user.hasSelectedLanguage),
         phone: user.phone,
         organization: user.organization,
+        expertise: user.expertise,
         isEmailVerified: user.isEmailVerified,
         createdAt: user.createdAt,
       },
@@ -453,7 +455,7 @@ const updateProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const { name, phone, organization, language } = req.body;
+    const { name, phone, organization, language, expertise } = req.body;
 
     if (name && typeof name === 'string' && name.trim().length >= 2) {
       user.name = name.trim();
@@ -463,6 +465,9 @@ const updateProfile = async (req, res) => {
     }
     if (organization !== undefined) {
       user.organization = String(organization).trim();
+    }
+    if (expertise !== undefined && ['university', 'industry'].includes(user.role)) {
+      user.expertise = String(expertise).trim();
     }
     if (language && typeof language === 'string' && language.trim()) {
       user.language = language.trim().toLowerCase();
@@ -482,6 +487,7 @@ const updateProfile = async (req, res) => {
         hasSelectedLanguage: Boolean(user.hasSelectedLanguage),
         phone: user.phone,
         organization: user.organization,
+        expertise: user.expertise,
         isEmailVerified: Boolean(user.isEmailVerified),
         isVerified: Boolean(user.isVerified),
         verificationStatus: user.verificationStatus,

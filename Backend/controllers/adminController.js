@@ -1,6 +1,7 @@
 const Problem = require('../models/Problem');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const { recommendInstitutions } = require('../utils/institutionMatcher');
 
 /**
  * Helper to dispatch in-app notifications
@@ -177,9 +178,9 @@ const getAdminProblemById = async (req, res) => {
   try {
     const problem = await Problem.findById(req.params.id)
       .populate('submittedBy', 'name email phone organization role createdAt')
-      .populate('assignedUniversity', 'name organization email phone isVerified')
-      .populate('collaboratingIndustries', 'name organization email phone isVerified')
-      .populate('assignedInstitutions.institution', 'name organization role email phone isVerified')
+      .populate('assignedUniversity', 'name organization expertise email phone isVerified')
+      .populate('collaboratingIndustries', 'name organization expertise email phone isVerified')
+      .populate('assignedInstitutions.institution', 'name organization expertise role email phone isVerified')
       .populate('solution.submittedBy', 'name organization role email')
       .populate('progressUpdates.postedBy', 'name organization role')
       .populate('timeline.updatedBy', 'name role');
@@ -449,7 +450,7 @@ const assignInstitutions = async (req, res) => {
  */
 const getInstitutions = async (req, res) => {
   try {
-    const { role, status } = req.query;
+    const { role, status, problemId } = req.query;
     const filter = { role: { $in: ['university', 'industry'] } };
 
     if (role && (role === 'university' || role === 'industry')) {
@@ -470,6 +471,23 @@ const getInstitutions = async (req, res) => {
       .select('-password -emailVerificationToken -resetPasswordToken')
       .sort({ createdAt: -1 });
 
+    let recommendations = [];
+    if (problemId) {
+      const problem = await Problem.findById(problemId)
+        .select('title description category')
+        .lean();
+      if (problem) {
+        const matchableInstitutions = await User.find({
+          role: { $in: ['university', 'industry'] },
+          isVerified: true,
+          isActive: { $ne: false },
+        })
+          .select('name role organization expertise isVerified isActive verificationStatus')
+          .lean();
+        recommendations = recommendInstitutions(problem, matchableInstitutions);
+      }
+    }
+
     const totalUniversities = await User.countDocuments({ role: 'university' });
     const totalIndustries = await User.countDocuments({ role: 'industry' });
     const verifiedCount = await User.countDocuments({
@@ -484,6 +502,7 @@ const getInstitutions = async (req, res) => {
 
     return res.status(200).json({
       institutions,
+      recommendations,
       counts: {
         totalUniversities,
         totalIndustries,

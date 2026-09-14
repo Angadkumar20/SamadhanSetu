@@ -42,6 +42,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    expertise: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     // User interface language preference (persisted in MongoDB)
     language: {
       type: String,
