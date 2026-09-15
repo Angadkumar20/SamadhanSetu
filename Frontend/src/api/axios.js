@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const configuredApiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const defaultApiUrl = import.meta.env.DEV
+  ? 'http://localhost:5000'
+  : 'https://samadhansetu-backend.onrender.com';
+const configuredApiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || defaultApiUrl;
 const API_BASE_URL = `${configuredApiUrl.replace(/\/$/, '').replace(/\/api$/, '')}/api`;
 
 export const buildApiUrl = (path = '') => {

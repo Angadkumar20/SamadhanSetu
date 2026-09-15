@@ -124,7 +124,7 @@ function LoginPage() {
       if (error.response && error.response.data && error.response.data.message) {
         setErrorMessage(error.response.data.message);
       } else {
-        setErrorMessage('Failed to connect to backend server. Ensure it is running at http://localhost:5000');
+        setErrorMessage('Failed to connect to backend server.');
       }
     } finally {
       setIsLoading(false);
