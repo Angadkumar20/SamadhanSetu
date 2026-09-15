@@ -329,7 +329,7 @@ function MySubmissionsPage() {
                       </span>
                       {token && (
                         <a
-                          href={`http://localhost:5000${file.url}?token=${token}`}
+                          href={buildApiUrl(`${file.url}?token=${encodeURIComponent(token)}`)}
                           target="_blank"
                           rel="noreferrer"
                           className="mt-2 text-[11px] font-bold text-emerald-600 hover:underline"

@@ -4,7 +4,37 @@ import Navbar from '../components/Navbar';
 import StatusBadge from '../components/StatusBadge';
 import ProblemTimeline from '../components/ProblemTimeline';
 import AIInsightsCard from '../components/AIInsightsCard';
-import api from '../api/axios';
+import api, { buildApiUrl } from '../api/axios';
+
+const getWorkflowState = (status) => {
+  const normalized = String(status || 'pending').toLowerCase();
+
+  if (['pending', 'under_review'].includes(normalized)) {
+    return { step1Active: true, step2Active: false, step3Active: false, step1Complete: false, step2Complete: false, step3Complete: false };
+  }
+
+  if (normalized === 'approved') {
+    return { step1Active: false, step2Active: true, step3Active: false, step1Complete: true, step2Complete: false, step3Complete: false };
+  }
+
+  if (normalized === 'assigned') {
+    return { step1Active: false, step2Active: false, step3Active: true, step1Complete: true, step2Complete: true, step3Complete: false };
+  }
+
+  if (['in_progress', 'solution_submitted'].includes(normalized)) {
+    return { step1Active: false, step2Active: false, step3Active: true, step1Complete: true, step2Complete: true, step3Complete: true };
+  }
+
+  if (normalized === 'solved') {
+    return { step1Active: false, step2Active: false, step3Active: false, step1Complete: true, step2Complete: true, step3Complete: true };
+  }
+
+  if (normalized === 'rejected') {
+    return { step1Active: false, step2Active: false, step3Active: false, step1Complete: false, step2Complete: false, step3Complete: false };
+  }
+
+  return { step1Active: true, step2Active: false, step3Active: false, step1Complete: false, step2Complete: false, step3Complete: false };
+};
 
 /**
  * AdminProblemDetails Component
@@ -110,7 +140,8 @@ function AdminProblemDetails() {
         message: res.data.message || 'Problem review recorded successfully!',
       });
       setReviewReason('');
-      fetchProblemDetails();
+      setProblem(res.data.problem || null);
+      await fetchProblemDetails();
     } catch (err) {
       console.error('Review submit failed:', err);
       setFeedback({
@@ -148,7 +179,8 @@ function AdminProblemDetails() {
         message: res.data.message || 'Assignment completed successfully!',
       });
       setAssignNotes('');
-      fetchProblemDetails();
+      setProblem(res.data.problem || null);
+      await fetchProblemDetails();
     } catch (err) {
       console.error('Assignment submit failed:', err);
       setFeedback({
@@ -176,7 +208,8 @@ function AdminProblemDetails() {
         message: res.data.message || `Solution verification action "${action}" completed!`,
       });
       setSolutionNotes('');
-      fetchProblemDetails();
+      setProblem(res.data.problem || null);
+      await fetchProblemDetails();
     } catch (err) {
       console.error('Solution verification failed:', err);
       setFeedback({
@@ -221,6 +254,7 @@ function AdminProblemDetails() {
   const refCode = `#REF-${pId.slice(-6).toUpperCase()}`;
   const verifiedUniversities = institutions.filter((i) => i.role === 'university');
   const verifiedIndustries = institutions.filter((i) => i.role === 'industry');
+  const workflowState = getWorkflowState(problem.status);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
@@ -346,7 +380,7 @@ function AdminProblemDetails() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {problem.media.map((item, idx) => {
                     const isVideo = item.mimetype?.startsWith('video/');
-                    const mediaSrc = `/api/problems/media/${item.filename}?token=${token}`;
+                    const mediaSrc = buildApiUrl(`/api/problems/media/${item.filename}?token=${encodeURIComponent(token || '')}`);
 
                     return (
                       <div
@@ -354,15 +388,38 @@ function AdminProblemDetails() {
                         className="rounded-xl border border-slate-200 overflow-hidden bg-slate-900 text-white flex flex-col justify-between"
                       >
                         {isVideo ? (
-                          <video controls className="w-full h-44 object-cover">
-                            <source src={mediaSrc} type={item.mimetype} />
-                          </video>
+                          <>
+                            <video
+                              controls
+                              className="w-full h-44 object-cover"
+                              onError={(event) => {
+                                event.currentTarget.style.display = 'none';
+                                const fallback = event.currentTarget.parentElement?.querySelector('[data-fallback]');
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            >
+                              <source src={mediaSrc} type={item.mimetype} />
+                            </video>
+                            <div data-fallback style={{ display: 'none' }} className="h-44 w-full items-center justify-center bg-slate-800 text-slate-300 text-xs font-semibold">
+                              Media unavailable
+                            </div>
+                          </>
                         ) : (
-                          <img
-                            src={mediaSrc}
-                            alt={item.originalName}
-                            className="w-full h-44 object-cover bg-slate-100"
-                          />
+                          <>
+                            <img
+                              src={mediaSrc}
+                              alt={item.originalName}
+                              className="w-full h-44 object-cover bg-slate-100"
+                              onError={(event) => {
+                                event.currentTarget.style.display = 'none';
+                                const fallback = event.currentTarget.parentElement?.querySelector('[data-fallback]');
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                            <div data-fallback style={{ display: 'none' }} className="h-44 w-full items-center justify-center bg-slate-800 text-slate-300 text-xs font-semibold">
+                              Media unavailable
+                            </div>
+                          </>
                         )}
                         <div className="p-2.5 text-[11px] bg-slate-900 truncate">
                           <span className="font-semibold">{item.originalName}</span>
@@ -537,219 +594,244 @@ function AdminProblemDetails() {
             </div>
 
             {/* ADMINISTRATIVE ACTION 1: Problem Review Form */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-              <h3 className="text-sm font-bold text-slate-900 mb-1">
-                Step 1: Administrative Review
-              </h3>
-              <p className="text-xs text-slate-500 mb-4">
-                Validate problem legitimacy and readiness for university assignment.
-              </p>
+            {!problem.status || problem.status === 'pending' || problem.status === 'under_review' ? (
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <h3 className="text-sm font-bold text-slate-900 mb-1">
+                  Step 1: Administrative Review
+                </h3>
+                <p className="text-xs text-slate-500 mb-4">
+                  Validate problem legitimacy and readiness for university assignment.
+                </p>
 
-              <form onSubmit={handleReviewSubmit} className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
-                    Review Decision:
-                  </label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setReviewAction('approve')}
-                      className={`py-2 text-xs font-bold rounded-lg border transition-colors ${
-                        reviewAction === 'approve'
-                          ? 'bg-emerald-600 text-white border-emerald-600'
-                          : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-                      }`}
-                    >
-                      ✓ Approve
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setReviewAction('request_info')}
-                      className={`py-2 text-xs font-bold rounded-lg border transition-colors ${
-                        reviewAction === 'request_info'
-                          ? 'bg-purple-600 text-white border-purple-600'
-                          : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-                      }`}
-                    >
-                      ? Ask Info
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setReviewAction('reject')}
-                      className={`py-2 text-xs font-bold rounded-lg border transition-colors ${
-                        reviewAction === 'reject'
-                          ? 'bg-rose-600 text-white border-rose-600'
-                          : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-                      }`}
-                    >
-                      ✕ Reject
-                    </button>
+                <form onSubmit={handleReviewSubmit} className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                      Review Decision:
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setReviewAction('approve')}
+                        className={`py-2 text-xs font-bold rounded-lg border transition-colors ${
+                          reviewAction === 'approve'
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        ✓ Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReviewAction('request_info')}
+                        className={`py-2 text-xs font-bold rounded-lg border transition-colors ${
+                          reviewAction === 'request_info'
+                            ? 'bg-purple-600 text-white border-purple-600'
+                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        ? Ask Info
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReviewAction('reject')}
+                        className={`py-2 text-xs font-bold rounded-lg border transition-colors ${
+                          reviewAction === 'reject'
+                            ? 'bg-rose-600 text-white border-rose-600'
+                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        ✕ Reject
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
-                    {reviewAction === 'reject'
-                      ? 'Rejection Reason *'
-                      : reviewAction === 'request_info'
-                      ? 'Information Required from Citizen *'
-                      : 'Internal Review Notes (Optional)'}
-                  </label>
-                  <textarea
-                    rows="3"
-                    required={reviewAction !== 'approve'}
-                    value={reviewReason}
-                    onChange={(e) => setReviewReason(e.target.value)}
-                    placeholder={
-                      reviewAction === 'reject'
-                        ? 'State specific reason for rejection...'
+                  <div>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                      {reviewAction === 'reject'
+                        ? 'Rejection Reason *'
                         : reviewAction === 'request_info'
-                        ? 'Describe what specific information the citizen should provide...'
-                        : 'Optional notes for audit log...'
-                    }
-                    className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
-                  ></textarea>
-                </div>
+                        ? 'Information Required from Citizen *'
+                        : 'Internal Review Notes (Optional)'}
+                    </label>
+                    <textarea
+                      rows="3"
+                      required={reviewAction !== 'approve'}
+                      value={reviewReason}
+                      onChange={(e) => setReviewReason(e.target.value)}
+                      placeholder={
+                        reviewAction === 'reject'
+                          ? 'State specific reason for rejection...'
+                          : reviewAction === 'request_info'
+                          ? 'Describe what specific information the citizen should provide...'
+                          : 'Optional notes for audit log...'
+                      }
+                      className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
+                    ></textarea>
+                  </div>
 
-                <button
-                  type="submit"
-                  disabled={isReviewing}
-                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors disabled:opacity-50"
-                >
-                  {isReviewing ? 'Saving Review...' : `Submit Review (${reviewAction.replace('_', ' ')})`}
-                </button>
-              </form>
-            </div>
+                  <button
+                    type="submit"
+                    disabled={isReviewing}
+                    className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors disabled:opacity-50"
+                  >
+                    {isReviewing ? 'Saving Review...' : `Submit Review (${reviewAction.replace('_', ' ')})`}
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-emerald-900 mb-1">Step 1: Administrative Review Complete</h3>
+                <p className="text-xs text-emerald-800">
+                  This problem has already passed the government review stage. The next available step is based on the current backend status.
+                </p>
+              </div>
+            )}
 
             {/* ADMINISTRATIVE ACTION 2: Institutional Assignment Form */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-              <h3 className="text-sm font-bold text-slate-900 mb-1">
-                Step 2: Assign Verified Institutions
-              </h3>
-              <p className="text-xs text-slate-500 mb-4">
-                Closed Verified Network: Assign verified academic and industry partners.
-              </p>
+            {['approved', 'assigned', 'in_progress', 'solution_submitted', 'solved'].includes(problem.status) && (
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <h3 className="text-sm font-bold text-slate-900 mb-1">
+                  Step 2: Assign Verified Institutions
+                </h3>
+                <p className="text-xs text-slate-500 mb-4">
+                  Closed Verified Network: Assign verified academic and industry partners.
+                </p>
 
-              <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Recommended Institutions</p>
-                    <p className="text-[11px] text-emerald-900 mt-1">Compatibility suggestions based on this problem's category and text.</p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200">Verified only</span>
-                </div>
-
-                {recommendations.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-emerald-200 bg-white/70 px-3 py-3 text-xs text-slate-600">
-                    No strong institution match found. Use the verified institution lists below for manual assignment.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {recommendations.map((institution) => (
-                      <div key={institution.id} className="rounded-lg border border-white bg-white p-3 shadow-xs">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="truncate text-xs font-bold text-slate-900" title={institution.name}>{institution.name}</p>
-                            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                              {institution.type === 'university' ? 'University' : 'Industry'}
-                            </p>
-                          </div>
-                          <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-black text-emerald-800">
-                            {institution.matchScore}% Match
-                          </span>
-                        </div>
-                        <div className="mt-2 flex items-center justify-between gap-2">
-                          <p className="min-w-0 truncate text-[11px] text-slate-600" title={institution.expertise}>
-                            <span className="font-bold text-slate-500">Expertise:</span> {institution.expertise}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (institution.type === 'university') setSelectedUniversity(institution.id);
-                              if (institution.type === 'industry') setSelectedIndustry(institution.id);
-                            }}
-                            className="shrink-0 rounded-lg border border-emerald-300 bg-white px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100"
-                          >
-                            Select
-                          </button>
-                        </div>
+                {problem.status === 'approved' || problem.status === 'assigned' || problem.status === 'in_progress' || problem.status === 'solution_submitted' || problem.status === 'solved' ? (
+                  <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Recommended Institutions</p>
+                        <p className="text-[11px] text-emerald-900 mt-1">Compatibility suggestions based on this problem's category and text.</p>
                       </div>
-                    ))}
+                      <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200">Verified only</span>
+                    </div>
+
+                    {recommendations.length === 0 ? (
+                      <p className="rounded-lg border border-dashed border-emerald-200 bg-white/70 px-3 py-3 text-xs text-slate-600">
+                        No strong institution match found. Use the verified institution lists below for manual assignment.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {recommendations.map((institution) => (
+                          <div key={institution.id} className="rounded-lg border border-white bg-white p-3 shadow-xs">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-bold text-slate-900" title={institution.name}>{institution.name}</p>
+                                <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                  {institution.type === 'university' ? 'University' : 'Industry'}
+                                </p>
+                              </div>
+                              <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-black text-emerald-800">
+                                {institution.matchScore}% Match
+                              </span>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between gap-2">
+                              <p className="min-w-0 truncate text-[11px] text-slate-600" title={institution.expertise}>
+                                <span className="font-bold text-slate-500">Expertise:</span> {institution.expertise}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (institution.type === 'university') setSelectedUniversity(institution.id);
+                                  if (institution.type === 'industry') setSelectedIndustry(institution.id);
+                                }}
+                                className="shrink-0 rounded-lg border border-emerald-300 bg-white px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100"
+                              >
+                                Select
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+
+                {problem.status === 'approved' || problem.status === 'assigned' ? (
+                  <form onSubmit={handleAssignSubmit} className="space-y-3.5">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                        Verified University / Research Lab:
+                      </label>
+                      <select
+                        value={selectedUniversity}
+                        onChange={(e) => setSelectedUniversity(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      >
+                        <option value="">-- Select Verified University --</option>
+                        {verifiedUniversities.map((uni) => (
+                          <option key={uni._id} value={uni._id}>
+                            {uni.name} ({uni.organization || 'University'}) ✓ Verified
+                          </option>
+                        ))}
+                      </select>
+                      {verifiedUniversities.length === 0 && (
+                        <p className="text-[10px] text-amber-700 mt-1">
+                          No verified universities available.{' '}
+                          <Link to="/admin/institutions" className="underline font-bold">
+                            Verify universities here
+                          </Link>
+                          .
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                        Verified Industry Partner (Optional):
+                      </label>
+                      <select
+                        value={selectedIndustry}
+                        onChange={(e) => setSelectedIndustry(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      >
+                        <option value="">-- Select Verified Industry Partner --</option>
+                        {verifiedIndustries.map((ind) => (
+                          <option key={ind._id} value={ind._id}>
+                            {ind.name} ({ind.organization || 'Industry'}) ✓ Verified
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                        Special Directives / Funding Notes:
+                      </label>
+                      <textarea
+                        rows="2"
+                        value={assignNotes}
+                        onChange={(e) => setAssignNotes(e.target.value)}
+                        placeholder="e.g. Focus on student capstone testing within 6 weeks..."
+                        className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
+                      ></textarea>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isAssigning || problem.status === 'assigned'}
+                      className="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors disabled:opacity-50"
+                    >
+                      {isAssigning ? 'Dispatching Assignment...' : problem.status === 'assigned' ? 'Institution Assignment Already Completed' : 'Confirm Institutional Assignment'}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-xs text-emerald-900 font-semibold">
+                    Institutional assignment is already completed for this problem. The government workflow is now in the work and verification stage.
                   </div>
                 )}
               </div>
+            )}
 
-              <form onSubmit={handleAssignSubmit} className="space-y-3.5">
-                {/* University Selection */}
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
-                    Verified University / Research Lab:
-                  </label>
-                  <select
-                    value={selectedUniversity}
-                    onChange={(e) => setSelectedUniversity(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  >
-                    <option value="">-- Select Verified University --</option>
-                    {verifiedUniversities.map((uni) => (
-                      <option key={uni._id} value={uni._id}>
-                        {uni.name} ({uni.organization || 'University'}) ✓ Verified
-                      </option>
-                    ))}
-                  </select>
-                  {verifiedUniversities.length === 0 && (
-                    <p className="text-[10px] text-amber-700 mt-1">
-                      No verified universities available.{' '}
-                      <Link to="/admin/institutions" className="underline font-bold">
-                        Verify universities here
-                      </Link>
-                      .
-                    </p>
-                  )}
-                </div>
-
-                {/* Industry Selection */}
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
-                    Verified Industry Partner (Optional):
-                  </label>
-                  <select
-                    value={selectedIndustry}
-                    onChange={(e) => setSelectedIndustry(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  >
-                    <option value="">-- Select Verified Industry Partner --</option>
-                    {verifiedIndustries.map((ind) => (
-                      <option key={ind._id} value={ind._id}>
-                        {ind.name} ({ind.organization || 'Industry'}) ✓ Verified
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Assignment Notes */}
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
-                    Special Directives / Funding Notes:
-                  </label>
-                  <textarea
-                    rows="2"
-                    value={assignNotes}
-                    onChange={(e) => setAssignNotes(e.target.value)}
-                    placeholder="e.g. Focus on student capstone testing within 6 weeks..."
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none"
-                  ></textarea>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isAssigning}
-                  className="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors disabled:opacity-50"
-                >
-                  {isAssigning ? 'Dispatching Assignment...' : 'Confirm Institutional Assignment'}
-                </button>
-              </form>
-            </div>
+            {problem.status === 'rejected' && (
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-rose-900 mb-1">Submission Rejected</h3>
+                <p className="text-xs text-rose-800">
+                  This reporting cycle is closed. No further assignment or solution workflow is available until a new review is initiated.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </main>

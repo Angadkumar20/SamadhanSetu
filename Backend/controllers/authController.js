@@ -15,6 +15,12 @@ const generateToken = (id, role) => {
   });
 };
 
+const matchesAdminAccessCode = (candidate) => {
+  const expected = String(process.env.ADMIN_ACCESS_CODE || '').trim();
+  const provided = String(candidate || '').trim();
+  return Boolean(expected) && provided === expected;
+};
+
 /**
  * @desc    Register a new user
  * @route   POST /api/auth/register
@@ -306,7 +312,7 @@ const resetPassword = async (req, res) => {
  */
 const login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password, role, adminAccessCode } = req.body;
 
     // 1. Validate inputs
     if (!email || !password) {
@@ -334,17 +340,28 @@ const login = async (req, res) => {
       });
     }
 
-    // 5. Ensure user has saved language (handle legacy database records gracefully)
+    // 5. Additional security gate for Government Admin access
+    if (user.role === 'admin') {
+      if (!adminAccessCode) {
+        return res.status(401).json({ message: 'Government admin access code is required.' });
+      }
+
+      if (!matchesAdminAccessCode(adminAccessCode)) {
+        return res.status(401).json({ message: 'Invalid government admin access code.' });
+      }
+    }
+
+    // 6. Ensure user has saved language (handle legacy database records gracefully)
     if (!user.language) {
       user.language = 'en';
       user.hasSelectedLanguage = true;
       await user.save();
     }
 
-    // 6. Generate JWT token
+    // 7. Generate JWT token
     const token = generateToken(user._id, user.role);
 
-    // 7. Return token and user data (excluding password)
+    // 8. Return token and user data (excluding password)
     return res.status(200).json({
       token,
       user: {

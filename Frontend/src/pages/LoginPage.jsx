@@ -32,6 +32,7 @@ function LoginPage() {
   // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [adminAccessCode, setAdminAccessCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   // Status feedback states
@@ -65,6 +66,11 @@ function LoginPage() {
       return;
     }
 
+    if (role === 'admin' && !adminAccessCode.trim()) {
+      setErrorMessage('Government admin access code is required.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -72,6 +78,7 @@ function LoginPage() {
         email: normalizedEmail,
         password,
         role,
+        adminAccessCode: role === 'admin' ? adminAccessCode.trim() : undefined,
       });
 
       const token = response.data.token;
@@ -261,6 +268,22 @@ function LoginPage() {
                 </button>
               </div>
             </div>
+
+            {role === 'admin' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Government Admin Access Code
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={adminAccessCode}
+                  onChange={(e) => setAdminAccessCode(e.target.value)}
+                  placeholder="Enter admin access code"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-sm transition-all"
+                />
+              </div>
+            )}
 
             {/* Submit Button */}
             <button

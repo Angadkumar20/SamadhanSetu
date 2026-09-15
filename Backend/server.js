@@ -2,9 +2,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 
-// Load environment variables from .env file
-dotenv.config();
+// Load environment variables from the actual backend .env file,
+// regardless of the working directory used to start the process.
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 // Initialize Express app
 const app = express();
@@ -13,8 +15,26 @@ const app = express();
 // Middleware
 // ==========================================
 
-// Enable CORS so the React frontend on a different port can communicate with this API
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  })
+);
 
 // Parse incoming JSON request bodies
 app.use(express.json());
